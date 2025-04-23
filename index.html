@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>모바일 서명</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; text-align: center; }
+    canvas { border: 2px solid #333; border-radius: 8px; width: 100%; max-width: 400px; height: 200px; }
+    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>서명을 입력해주세요</h2>
+  <canvas id="signature-pad"></canvas><br>
+  <button onclick="clearCanvas()">지우기</button>
+  <button onclick="submitSignature()">제출하기</button>
+
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    emailjs.init("w4Nac5IhfGubO92IW");
+
+    const canvas = document.getElementById("signature-pad");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    const resizeCanvas = () => {
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      ctx.scale(ratio, ratio);
+    }
+
+    resizeCanvas();
+
+    canvas.addEventListener("touchstart", e => {
+      drawing = true;
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      ctx.beginPath();
+      ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+    });
+
+    canvas.addEventListener("touchmove", e => {
+      if (!drawing) return;
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+      ctx.stroke();
+    });
+
+    canvas.addEventListener("touchend", () => {
+      drawing = false;
+    });
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function submitSignature() {
+      const dataUrl = canvas.toDataURL();
+      emailjs.send("service_rsc", "template_rsc", {
+        message: "서명이 도착했습니다!",
+        signature: dataUrl
+      }).then(() => {
+        alert("서명이 성공적으로 전송되었습니다.");
+        clearCanvas();
+      }, err => {
+        alert("전송 실패: " + JSON.stringify(err));
+      });
+    }
+  </script>
+</body>
+</html>
